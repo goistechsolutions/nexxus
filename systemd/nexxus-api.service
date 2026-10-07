@@ -1,0 +1,35 @@
+[Unit]
+Description=Nexxus FastAPI API
+After=network-online.target postgresql.service
+Wants=network-online.target
+Requires=postgresql.service
+
+[Service]
+Type=exec
+User=nexxus
+Group=nexxus
+EnvironmentFile=/etc/nexxus/api.env
+WorkingDirectory=/opt/nexxus/current/backend
+ExecStart=/opt/nexxus/current/backend/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 --workers 2 --proxy-headers --forwarded-allow-ips=127.0.0.1
+ExecStartPre=/opt/nexxus/current/backend/.venv/bin/alembic upgrade head
+Restart=on-failure
+RestartSec=5s
+TimeoutStartSec=120s
+TimeoutStopSec=30s
+KillSignal=SIGTERM
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+ReadWritePaths=/var/lib/nexxus /var/log/nexxus
+UMask=0027
+
+[Install]
+WantedBy=multi-user.target

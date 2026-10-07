@@ -1,0 +1,32 @@
+[Unit]
+Description=Nexxus Background Worker
+After=network-online.target postgresql.service nexxus-api.service
+Wants=network-online.target
+Requires=postgresql.service
+
+[Service]
+Type=exec
+User=nexxus
+Group=nexxus
+EnvironmentFile=/etc/nexxus/worker.env
+WorkingDirectory=/opt/nexxus/current/worker
+ExecStart=/opt/nexxus/current/worker/.venv/bin/python -m worker.main
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=60s
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+ReadWritePaths=/var/lib/nexxus /var/log/nexxus
+UMask=0027
+
+[Install]
+WantedBy=multi-user.target
