@@ -1,16 +1,24 @@
 from functools import lru_cache
-from pydantic import Field, field_validator
+from typing import Literal
+
+from pydantic import AnyHttpUrl, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
 class Settings(BaseSettings):
-    model_config=SettingsConfigDict(env_file=".env",env_prefix="NEXXUS_",extra="ignore")
-    app_name:str="Nexxus API"; env:str="development"
-    database_url:str="postgresql+asyncpg://nexxus:change-me@127.0.0.1:5432/nexxus"
-    jwt_secret:str=Field(min_length=32); jwt_algorithm:str="HS256"; access_token_minutes:int=15
-    allowed_hosts:list[str]=["localhost","127.0.0.1"]; cors_origins:list[str]=[]
-    @field_validator("jwt_secret")
-    @classmethod
-    def reject_default(cls,v:str)->str:
-        if v.startswith("change-"): raise ValueError("configure NEXXUS_JWT_SECRET")
-        return v
+    model_config = SettingsConfigDict(
+        env_file=".env", env_prefix="NEXXUS_", extra="ignore"
+    )
+
+    environment: Literal["dev", "hml", "prd"] = "dev"
+    api_v1_prefix: str = "/v1"
+    database_url: str = "postgresql+asyncpg://USER:PASSWORD@localhost:5432/nexxus"
+    cors_origins: list[AnyHttpUrl] = Field(default_factory=list)
+    oidc_issuer_url: str | None = None
+    oidc_audience: str | None = None
+    tenant_header: str = "X-Tenant-Id"
+
+
 @lru_cache
-def get_settings()->Settings: return Settings()
+def get_settings() -> Settings:
+    return Settings()
