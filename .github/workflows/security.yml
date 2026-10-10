@@ -1,1 +1,35 @@
-name: Security
+name: Security Baseline
+
+on:
+  pull_request:
+  push:
+    branches: [main, feat/**]
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-review:
+    name: Dependency review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Review dependency changes
+        uses: actions/dependency-review-action@v4
+
+  secret-pattern-baseline:
+    name: Detect committed secret patterns
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Reject likely private keys or GitHub tokens
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -RInE --exclude-dir=.git --exclude='*.example' \
+            '(-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----|gh[pousr]_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,})' .; then
+            echo "Potential committed secret detected. Remove it and use deployment secrets." >&2
+            exit 1
+          fi
