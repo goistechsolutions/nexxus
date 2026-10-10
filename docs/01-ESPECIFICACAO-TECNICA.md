@@ -1,0 +1,1 @@
+Especificacao Greenfield. Multi-tenant por schema. Control plane em public e data plane por tenant. AnalysisContext obrigatorio.

@@ -1,0 +1,1 @@
+Ubuntu 26.04 LTS, Nginx, FastAPI, PostgreSQL 16+, systemd, Docker opcional.

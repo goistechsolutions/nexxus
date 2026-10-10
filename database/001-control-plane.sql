@@ -1,0 +1,1 @@
+CREATE TABLE IF NOT EXISTS public.tenants(id uuid primary key, tenant_code varchar(50) unique, schema_name varchar(64));

@@ -1,0 +1,11 @@
+[Unit]
+Description=Copilot Worker
+After=network-online.target
+[Service]
+User=copilot
+WorkingDirectory=/opt/copilot/current/backend
+EnvironmentFile=/etc/copilot/worker.env
+ExecStart=/opt/copilot/current/backend/.venv/bin/python -m app.worker.main
+Restart=on-failure
+[Install]
+WantedBy=multi-user.target

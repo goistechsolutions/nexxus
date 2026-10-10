@@ -1,0 +1,286 @@
+diff --git a/systemd/nexxus-worker.service b/systemd/nexxus-worker.service
+deleted file mode 100644
+
+diff --git a/systemd/nexxus-api.service b/systemd/nexxus-api.service
+--- a/systemd/nexxus-api.service
++++ b/systemd/nexxus-api.service
+@@
+ [Unit]
+ Description=Nexxus FastAPI API
+-After=network-online.target postgresql.service
++After=network-online.target
+ Wants=network-online.target
+-Requires=postgresql.service
+
+ [Service]
+ Type=exec
+ User=nexxus
+ Group=nexxus
+
+ EnvironmentFile=/etc/nexxus/api.env
+
+ WorkingDirectory=/opt/nexxus/current/backend
+
+ ExecStartPre=/opt/nexxus/current/backend/.venv/bin/alembic upgrade head
+
+ ExecStart=/opt/nexxus/current/backend/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2
+
+ Restart=on-failure
+ RestartSec=5
+
+ TimeoutStartSec=120
+ TimeoutStopSec=30
+
+ NoNewPrivileges=yes
+ PrivateTmp=yes
+
+ ProtectSystem=strict
+ ProtectHome=yes
+
+ ReadWritePaths=/var/lib/nexxus
+ ReadWritePaths=/var/log/nexxus
+
+ UMask=0027
+
+ [Install]
+ WantedBy=multi-user.target
+
+diff --git a/scripts/validate-package.sh b/scripts/validate-package.sh
+--- a/scripts/validate-package.sh
++++ b/scripts/validate-package.sh
+@@
+-#!/usr/bin/env bash
+-set -Eeuo pipefail
+-
+-ROOT=${1:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}
+-
+-# valida instalação e systemd
++#!/usr/bin/env bash
++
++set -Eeuo pipefail
++
++ROOT="${1:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
++
++failures=0
++
++fail() {
++    echo "[FAIL] $*" >&2
++    failures=$((failures+1))
++}
++
++ok() {
++    echo "[OK] $*"
++}
++
++required=(
++    backend/pyproject.toml
++    backend/alembic.ini
++    backend/app/main.py
++    backend/migrations/env.py
++    config/api.env.example
++    scripts/install.sh
++    scripts/validate-package.sh
++    systemd/nexxus-api.service
++)
++
++for file in "${required[@]}"; do
++    if [[ -f "$ROOT/$file" ]]; then
++        ok "$file"
++    else
++        fail "Ausente: $file"
++    fi
++done
++
++echo
++echo "[INFO] Validando scripts..."
++
++while IFS= read -r script; do
++    bash -n "$script" \
++        && ok "${script#$ROOT/}" \
++        || fail "${script#$ROOT/}"
++done < <(find "$ROOT/scripts" -type f -name "*.sh" | sort)
++
++echo
++echo "[INFO] Compilando Python..."
++
++python3 -m compileall \
++    "$ROOT/backend/app" \
++    "$ROOT/backend/migrations" \
++    >/dev/null \
++    && ok "Compilação Python" \
++    || fail "Compilação Python"
++
++echo
++echo "[INFO] Validando unit files..."
++
++grep -q "^ExecStart=" \
++    "$ROOT/systemd/nexxus-api.service" \
++    && ok "nexxus-api.service" \
++    || fail "nexxus-api.service"
++
++echo
++
++if ((failures > 0)); then
++    echo "[FAIL] Falhas encontradas: $failures"
++    exit 1
++fi
++
++echo "[OK] Pacote validado com sucesso"
+
+diff --git a/scripts/smoke-test.sh b/scripts/smoke-test.sh
+--- a/scripts/smoke-test.sh
++++ b/scripts/smoke-test.sh
+@@
++#!/usr/bin/env bash
++
++set -Eeuo pipefail
++
++ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
++
++"$ROOT/scripts/validate-package.sh"
++
++if command -v pytest >/dev/null 2>&1; then
++    pytest backend/tests -q
++else
++    echo "[WARN] pytest não instalado"
++fi
++
++echo "[OK] Smoke test concluído"
+
+diff --git a/.gitignore b/.gitignore
+--- a/.gitignore
++++ b/.gitignore
+@@
++__pycache__/
++*.py[cod]
++*.so
++
++.venv/
++venv/
++env/
++
++dist/
++build/
++*.egg-info/
++
++.coverage
++.pytest_cache/
++.ruff_cache/
++
++.idea/
++.vscode/
++
++.env
++.env.*
++
++*.log
++
+diff --git a/pytest.ini b/pytest.ini
+new file mode 100644
+--- /dev/null
++++ b/pytest.ini
+@@
++[pytest]
++testpaths = backend/tests
++
++python_files = test_*.py
++
++addopts =
++    -ra
++    --strict-markers
++    --strict-config
++
++markers =
++    integration: integration tests
++    security: security tests
++    rls: row level security tests
+
+diff --git a/ruff.toml b/ruff.toml
+new file mode 100644
+--- /dev/null
++++ b/ruff.toml
+@@
++line-length = 100
++target-version = "py312"
++
++[lint]
++select = [
++    "E",
++    "F",
++    "I",
++    "UP",
++    "B"
++]
++
++[format]
++quote-style = "double"
++indent-style = "space"
+
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+new file mode 100644
+--- /dev/null
++++ b/.github/workflows/ci.yml
+@@
++name: CI
++
++on:
++  push:
++  pull_request:
++
++jobs:
++
++  test:
++    runs-on: ubuntu-latest
++
++    steps:
++      - uses: actions/checkout@v4
++
++      - uses: actions/setup-python@v5
++        with:
++          python-version: "3.12"
++
++      - name: Install
++        run: |
++          python -m pip install -U pip
++          pip install -e backend
++
++      - name: Ruff
++        run: |
++          pip install ruff
++          ruff check backend
++
++      - name: Validate
++        run: |
++          bash scripts/validate-package.sh
++
++      - name: Pytest
++        run: |
++          pip install pytest
++          pytest backend/tests
+
+diff --git a/.github/workflows/security.yml b/.github/workflows/security.yml
+new file mode 100644
+--- /dev/null
++++ b/.github/workflows/security.yml
+@@
++name: Security
++
++on:
++  push:
++  pull_request:
++
++jobs:
++
++  security:
++    runs-on: ubuntu-latest
++
++    steps:
++      - uses: actions/checkout@v4
++
++      - name: Secret Scan
++        run: |
++          ! grep -R "REPLACE_WITH_SECRET" .
++
++      - name: Credential Scan
++        run: |
++          ! grep -R "password=" . || exit 1

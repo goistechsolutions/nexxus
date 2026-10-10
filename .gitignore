@@ -1,41 +1,18 @@
-# Python
 __pycache__/
 *.py[cod]
-*.egg-info/
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
+*.so
 .venv/
 venv/
-
-# Ambiente
-.env
-.env.*
-!.env.example
-
-# Bancos e arquivos locais
-*.sqlite
-*.sqlite3
-*.db
-postgres-data/
-backups/
-*.dump
-*.sql.gz
-
-# Logs
-*.log
-logs/
-
-# Frontend
-node_modules/
+env/
 dist/
 build/
-.vite/
-
-# Sistema
-.DS_Store
-Thumbs.db
-
-# IDE
-.vscode/
+*.egg-info/
+.coverage
+.pytest_cache/
+.ruff_cache/
 .idea/
+.vscode/
+.env
+.env.*
+*.log
+backend/SHA256SUMS

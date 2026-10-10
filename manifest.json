@@ -1,0 +1,20 @@
+{
+  "name": "Copilot Protheus Greenfield",
+  "version": "1.0.0-rc.1",
+  "platform": "Ubuntu Server 26.04 LTS (Resolute Raccoon)",
+  "platform_id": "ubuntu",
+  "platform_version": "26.04",
+  "platform_codename": "resolute",
+  "status": "production-candidate",
+  "production_ready": false,
+  "technical_review_ready": true,
+  "install_ready": true,
+  "postgresql_min_version": 16,
+  "pgvector_required": true,
+  "docker_required": false,
+  "systemd_required": true,
+  "requires_environment_homologation": true,
+  "backup_included": true,
+  "restore_included": true,
+  "sha256_manifest": "SHA256SUMS"
+}

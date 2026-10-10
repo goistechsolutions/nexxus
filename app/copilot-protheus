@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+echo "Binário da aplicação não fornecido. Substitua app/copilot-protheus pelo artefato homologado." >&2
+exit 78

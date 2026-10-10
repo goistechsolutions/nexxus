@@ -1,0 +1,33 @@
+[Unit]
+Description=Copilot Protheus Greenfield
+After=network-online.target postgresql.service
+Wants=network-online.target
+Requires=postgresql.service
+
+[Service]
+Type=simple
+User=copilot-protheus
+Group=copilot-protheus
+EnvironmentFile=/etc/copilot-protheus/copilot-protheus.env
+ExecStart=/opt/copilot-protheus/current/app/copilot-protheus
+WorkingDirectory=/opt/copilot-protheus/current
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=30s
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+ReadWritePaths=/var/lib/copilot-protheus /var/log/copilot-protheus
+UMask=0027
+
+[Install]
+WantedBy=multi-user.target

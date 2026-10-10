@@ -1,0 +1,14 @@
+[Unit]
+Description=Copilot API
+After=network-online.target
+[Service]
+User=copilot
+WorkingDirectory=/opt/copilot/current/backend
+EnvironmentFile=/etc/copilot/api.env
+ExecStart=/opt/copilot/current/backend/.venv/bin/gunicorn app.main:app --worker-class uvicorn.workers.UvicornWorker --bind 127.0.0.1:8000 --workers 4
+Restart=on-failure
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+[Install]
+WantedBy=multi-user.target
