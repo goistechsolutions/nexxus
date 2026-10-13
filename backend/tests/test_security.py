@@ -9,7 +9,7 @@ os.environ.setdefault(
     "test-secret-that-is-at-least-32-characters-long",
 )
 
-from app.core.security import (  # noqa: E402
+from app.core.security import (
     create_access_token,
     create_refresh_token,
     decode_token,

@@ -1,5 +1,5 @@
-from collections.abc import AsyncIterator
-from typing import Annotated, Callable
+from collections.abc import AsyncIterator, Callable
+from typing import Annotated
 from uuid import UUID
 
 from fastapi import Depends, Header, HTTPException, Request
@@ -40,23 +40,22 @@ async def principal(
 async def tenant_db(
     context: Annotated[AnalysisContext, Depends(principal)],
 ) -> AsyncIterator:
-    async with SessionLocal() as db:
-        async with db.begin():
-            await set_rls_context(db, context.tenant_id, context.user_id)
+    async with SessionLocal() as db, db.begin():
+        await set_rls_context(db, context.tenant_id, context.user_id)
 
-            user = (
-                await db.scalars(
-                    select(User).where(
-                        User.id == context.user_id,
-                        User.active.is_(True),
-                    )
+        user = (
+            await db.scalars(
+                select(User).where(
+                    User.id == context.user_id,
+                    User.active.is_(True),
                 )
-            ).first()
+            )
+        ).first()
 
-            if not user:
-                raise HTTPException(status_code=401, detail="inactive user")
+        if not user:
+            raise HTTPException(status_code=401, detail="inactive user")
 
-            yield db
+        yield db
 
 
 def require_permissions(*required: str) -> Callable:
