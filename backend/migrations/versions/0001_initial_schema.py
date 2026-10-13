@@ -1,9 +1,9 @@
 """Initial schema."""
 
-from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
+from alembic import op
 from pgvector.sqlalchemy import Vector
+from sqlalchemy.dialects import postgresql
 
 revision = "0001"
 down_revision = None

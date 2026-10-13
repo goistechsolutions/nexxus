@@ -20,7 +20,7 @@ router = APIRouter(prefix="/admin", tags=["admin"])
 async def create_role(
     body: RoleCreate,
     context: Annotated[AnalysisContext, Depends(principal)],
-    db: AsyncSession = Depends(tenant_db),
+    db: Annotated[AsyncSession, Depends(tenant_db)],
 ) -> dict[str, str]:
     permissions = (
         await db.scalars(
@@ -49,7 +49,7 @@ async def create_role(
 async def create_user(
     body: UserCreate,
     context: Annotated[AnalysisContext, Depends(principal)],
-    db: AsyncSession = Depends(tenant_db),
+    db: Annotated[AsyncSession, Depends(tenant_db)],
 ) -> dict[str, str]:
     roles = (
         await db.scalars(select(Role).where(Role.name.in_(body.roles)))
