@@ -17,6 +17,10 @@ class Settings(BaseSettings):
     oidc_issuer_url: str | None = None
     oidc_audience: str | None = None
     tenant_header: str = "X-Tenant-Id"
+    jwt_secret: str = "change-me-in-production-with-a-long-random-secret"
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 15
+    refresh_token_expire_days: int = 7
 
 
 @lru_cache
