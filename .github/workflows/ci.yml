@@ -1,20 +1,45 @@
-name: Foundation CI
+name: Backend CI
 
 on:
   pull_request:
   push:
-    branches: [main, feat/**]
+    branches:
+      - main
+      - "feat/**"
+      - "chore/**"
 
 permissions:
   contents: read
 
 jobs:
-  foundation:
-    name: Lint and test governed foundation
+  backend:
+    name: Lint, migrate and test backend
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: nexxus
+          POSTGRES_PASSWORD: nexxus
+          POSTGRES_DB: nexxus
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U nexxus"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      NEXXUS_ENVIRONMENT: dev
+      NEXXUS_DATABASE_URL: postgresql+asyncpg://nexxus:nexxus@localhost:5432/nexxus
+      NEXXUS_JWT_SECRET: ci-secret-that-is-at-least-32-characters-long
+
     defaults:
       run:
         working-directory: backend
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -23,25 +48,29 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: pip
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
 
-      - name: Lint foundation
+      - name: Lint
         run: |
-          ruff check \
-            app/api/v1 \
-            app/core/config.py \
-            app/core/observability.py \
-            app/core/security.py \
-            app/core/tenancy.py \
-            app/domain \
-            app/infrastructure \
-            app/main.py \
-            tests/test_health.py \
-            tests/test_tenant_context.py
+          ruff check .
+          ruff format --check .
 
-      - name: Test foundation
-        run: pytest -q tests/test_health.py tests/test_tenant_context.py
+      - name: Verify single Alembic head
+        run: |
+          heads="$(alembic heads)"
+          echo "$heads"
+          test "$(echo "$heads" | grep -c 'head' )" -eq 1
+
+      - name: Apply migrations
+        run: alembic upgrade head
+
+      - name: Test
+        run: |
+          pytest -q \
+            --cov=app \
+            --cov-report=term-missing
