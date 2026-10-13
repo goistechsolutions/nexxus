@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     api_v1_prefix: str = "/v1"
     database_url: str = "postgresql+asyncpg://USER:PASSWORD@localhost:5432/nexxus"
     cors_origins: list[AnyHttpUrl] = Field(default_factory=list)
+    allowed_hosts: list[str] = Field(default_factory=lambda: ["*"])
     oidc_issuer_url: str | None = None
     oidc_audience: str | None = None
     tenant_header: str = "X-Tenant-Id"
